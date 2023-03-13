@@ -1,0 +1,72 @@
+---
+- name: Preconfig
+  hosts: demo
+  tasks:
+    - name: Подготовка системы
+      block:
+        - name: Добавляем universe
+          apt_repository:
+            repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+            state: present
+
+        - name: Обновляем кэш
+          apt:
+            update_cache: true
+            cache_valid_time: 3600
+            force_apt_get: true
+      become: true
+
+    - name: Установка Docker
+      block:
+        - name: Установка дополнительных пакетов
+          apt:
+            name:
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
+            update_cache: true
+            cache_valid_time: 3600
+
+        - name: Указываем ключи
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Установка стабильного репозитория
+          apt_repository:
+            repo: deb https://download.docker.com/linux/ubuntu focal stable
+            state: present
+            update-cache: true
+            filename: docker
+
+        - name: Установка Docker-ce
+          apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+
+        - name: Проверка что докер установлен и перезагружен
+          service:
+            name: docker
+            state: restarted
+            enabled: true
+
+      become: true
+
+    - name: Завершение установки
+      block:
+        - name: Проверка существования пользователя + добавление пользователя в группу Docker
+          user: # модуль
+            name: "{{ user }}" # параметры
+            append: true
+            groups: docker
+
+        - name: Перезагрузка системы
+          reboot:
+            reboot_timeout: 3600
+
+      become: true

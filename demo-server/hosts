@@ -1,0 +1,2 @@
+[demo]
+172.18.96.1 ansible_user=yatolstoy ansible_port=2222

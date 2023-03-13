@@ -1,0 +1,28 @@
+---
+- name: user # название плейбука
+  hosts: demo # название группы серверов. all - всё что описано в ini
+  tasks: # перечисление задач
+    - name: Preconfig block # название блока задач
+      block: # перечисление задач
+        - name: Create user # название задачи
+          vars: # переменные
+            user: yatolstoy # переменная ключ/значение
+          user: # модуль
+            name: "{{ user }}" # параметры
+            state: absent
+          register: error # записываем результат задачи в переменную
+        - name: Install curl # Ещё одна задача
+          apt: # модуль
+            name: curl
+            update-cache: yes
+          register: error
+      become: true # выполняем из под sudo
+      when: ansible_facts['distribution'] == 'CentOS' #условие выполнения всего блока
+      rescue: # выполняется при ошибке на одной из задач
+        - name: Some error print
+          debug:
+            var: error
+      always: # выполняется в любом случае
+        name: Reboot
+        debug:
+          msg: 'Rebooot'
